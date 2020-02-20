@@ -36,4 +36,8 @@ subset_actual = filter_encrypted(encrypted_document)
 assert subset_expected == subset_actual
 # decrypt document using registered provider
 decrypted_document = bucket.decrypt_fields(encrypted_document, fieldspec, prefix)
+<<<<<<< HEAD
 assert decrypted_document==document
+=======
+assert decrypted_document==document
+>>>>>>> 397a7352b537fcfdfa771a516cf588f84f00a74a
