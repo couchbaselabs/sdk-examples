@@ -14,8 +14,11 @@ $cluster = new Cluster("couchbase://192.168.1.101", $opts);
 $collection = $cluster->bucket("travel-sample")->defaultCollection();
 
 $document = ["foo" => "bar", "bar" => "foo"];
+$res = $collection->insert("document-key-new", $document);
+printf("document \"document-key\" has been created with CAS \"%s\"\n", $res->cas());
 
 // Insert document with options
+$document = ["foo" => "bar", "bar" => "foo"];
 $opts = new InsertOptions();
 $opts->timeout(300000 /* microseconds */);
 $res = $collection->insert("document-key", $document, $opts);
@@ -43,7 +46,21 @@ $opts->cas($oldCas);
 $res = $collection->replace("document-key", $doc, $opts);
 printf("document \"document-key\" \"%s\" been replaced successfully. New CAS \"%s\"\n", $oldCas, $res->cas());
 
+$opts = new RemoveOptions();
+$options->timeout(5000000); // 5 seconds
+$result = $collection->remove("document-key");
+
+$document = ["foo" => "bar", "bar" => "foo"];
+$opts = new UpsertOptions();
+$opts->expiry(60 /* seconds */);
+$res = $collection->upsert("document-key", $document, $opts);
+printf("document \"document-key\" has been created with CAS \"%s\"\n", $res->cas());
+
 // Get
+$res = $collection->get("document-key");
+$doc = $res->content();
+printf("document \"document-key\" has content: \"%s\" CAS \"%s\"\n", json_encode($doc), $res->cas());
+
 $opts = new GetOptions();
 $opts->timeout(300000 /* microseconds */);
 $res = $collection->get("document-key", $opts);
@@ -55,5 +72,4 @@ $opts = new RemoveOptions();
 $opts->timeout(3000000 /* microseconds */);
 $opts->durabilityLevel(DurabilityLevel::MAJORITY);
 $res = $collection->remove("document-key", $opts);
-var_dump($res);
 printf("document \"document-key\" has been removed\n");

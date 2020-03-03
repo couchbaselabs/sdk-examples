@@ -7,6 +7,48 @@ use \Couchbase\ConjunctionSearchQuery;
 use \Couchbase\SearchOptions;
 use \Couchbase\MutationState;
 
+/*
+ * index definition
+{
+  "type": "fulltext-index",
+  "name": "travel-sample-index",
+  "uuid": "ea630dfe35e1f415",
+  "sourceType": "couchbase",
+  "sourceName": "travel-sample",
+  "sourceUUID": "8ee9d874356f4c92a63a244f5e34210a",
+  "planParams": {
+    "maxPartitionsPerPIndex": 171,
+    "indexPartitions": 6
+  },
+  "params": {
+    "doc_config": {
+      "docid_prefix_delim": "",
+      "docid_regexp": "",
+      "mode": "type_field",
+      "type_field": "type"
+    },
+    "mapping": {
+      "analysis": {},
+      "default_analyzer": "standard",
+      "default_datetime_parser": "dateTimeOptional",
+      "default_field": "_all",
+      "default_mapping": {
+        "dynamic": true,
+        "enabled": true
+      },
+      "default_type": "_default",
+      "docvalues_dynamic": true,
+      "index_dynamic": true,
+      "store_dynamic": false,
+      "type_field": "_type"
+    },
+    "store": {
+      "indexType": "scorch"
+    }
+  },
+  "sourceParams": {}
+}
+ */
 $opts = new ClusterOptions();
 $opts->credentials("Administrator", "password");
 $cluster = new Cluster("couchbase://192.168.1.101", $opts);
@@ -39,6 +81,7 @@ printf("Swanky and with cleanliness 5+:\n");
 foreach ($res->rows() as $row) {
     printf("id: %s, score: %f\n", $row['id'], $row['score']);
 }
+
 
 // Create new hotel document and demonstrate query with consistency requirement
 $collection = $cluster->bucket('travel-sample')->defaultCollection();

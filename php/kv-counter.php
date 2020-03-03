@@ -10,8 +10,14 @@ $cluster = new Cluster("couchbase://192.168.1.101", $opts);
 
 $bucket = $cluster->bucket("travel-sample");
 $collection = $bucket->defaultCollection();
-$binaryCollection = $collection->binary();
 
+$collection->upsert("foo", 0);
+// increment binary value by 1 (default)
+$binaryCollection = $collection->binary();
+$res = $binaryCollection->increment("foo");
+
+// decremtnt binary value by 1 (default)
+$res = $binaryCollection->decrement("foo");
 
 // Increment & Decrement are considered part of the 'binary' API
 // and as such may still be a subject to change
@@ -38,7 +44,6 @@ $opts->initial(10)->delta(4);
 $res = $binaryCollection->decrement($key, $opts);
 // Should print 8
 printf("Decremented Counter: %d\n", $res->content());
-
 
 // Output:
 //

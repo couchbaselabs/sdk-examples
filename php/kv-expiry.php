@@ -2,6 +2,7 @@
 use \Couchbase\ClusterOptions;
 use \Couchbase\Cluster;
 use \Couchbase\UpsertOptions;
+use \Couchbase\TouchOptions;
 
 $opts = new ClusterOptions();
 $opts->credentials("Administrator", "password");
@@ -26,6 +27,11 @@ $res = $collection->get($key);
 printf("[get] document content: %s\n", var_export($res->content(), true));
 
 // Touch the document to adjust expiration time
+$collection->touch($key, 60 /* seconds */);
+
+// Touch the document to adjust expiration time
+$opts = new TouchOptions();
+$opts->timeout(500000 /* microseconds */);
 $collection->touch($key, 60 /* seconds */);
 
 // Get and touch retrieves the document and adjusting expiration time

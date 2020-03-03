@@ -4,23 +4,24 @@ use \Couchbase\ClusterOptions;
 use \Couchbase\Cluster;
 use \Couchbase\Collection;
 use \Couchbase\ReplaceOptions;
+use \Couchbase\CasMismatchError;
 
-function replaceWithCas(Collection $collection, string $userId) {
+function incrementVisitCount(Collection $collection, string $userId) {
     $maxRetries = 10;
     for ($i = 0; $i < $maxRetries; $i++) {
-        // Get the current document content
+        // Get the current document contents
         $res = $collection->get($userId);
 
         // Increment the visit count
         $user = $res->content();
         $user["visit_count"]++;
 
-        // Attempt to replace the document using CAS
         try {
+            // Attempt to replace the document using CAS
             $opts = new ReplaceOptions();
             $opts->cas($res->cas());
             $collection->replace($userId, $user, $opts);
-        } catch (\Couchbase\CasMismatchException $ex) {
+        } catch (CasMismatchError $ex) {
             continue;
         }
 
@@ -29,6 +30,7 @@ function replaceWithCas(Collection $collection, string $userId) {
     }
     printf("Replace failed after %d attempts\n", $maxRetries);
 }
+
 
 function lockingAndCas(Collection $collection, string $userId) {
     $res = $collection->getAndLock($userId, 2 /* seconds */);
