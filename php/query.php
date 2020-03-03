@@ -59,3 +59,4 @@ foreach ($res->rows() as $row) {
 }
 
 printf("Execution Time: %d\n", $res->metaData()->metrics()['executionTime']);
+
