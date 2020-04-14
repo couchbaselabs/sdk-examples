@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
+	// Load the public/private key pair from file
 	cert, err := tls.LoadX509KeyPair("mycert.pem", "mykey.pem")
 	if err != nil {
 		panic(err)
