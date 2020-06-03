@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/couchbase/gocb/v2"
@@ -29,25 +30,16 @@ func main() {
 	}
 
 	query := "SELECT x.* FROM `travel-sample` x LIMIT 10;"
-	rows, err := cluster.Query(query, &gocb.QueryOptions{})
+	rows, err := cluster.Query(query, &gocb.QueryOptions{
+		Metrics: true,
+	})
 	// check query was successful
 	if err != nil {
 		panic(err)
 	}
 
-	type hotel struct {
-		Name string `json:"name"`
-	}
-
-	var hotels []hotel
 	// iterate over rows
 	for rows.Next() {
-		var h hotel // this could also just be an interface{} type
-		err := rows.Row(&h)
-		if err != nil {
-			panic(err)
-		}
-		hotels = append(hotels, h)
 	}
 
 	// always check for errors after iterating
@@ -55,6 +47,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	metadata, err := rows.MetaData()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Execution Time: %d\n", metadata.Metrics.ExecutionTime)
 
 	if err := cluster.Close(nil); err != nil {
 		panic(err)

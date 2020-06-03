@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/couchbase/gocb/v2"
 )
@@ -14,12 +15,21 @@ func main() {
 		},
 	}
 
-	cluster, err := gocb.Connect("10.112.193.101", opts)
+	cluster, err := gocb.Connect("localhost", opts)
 	if err != nil {
 		panic(err)
 	}
 
-	bucket := cluster.Bucket("default")
+	// For Server versions 6.5 or later you do not need to open a bucket here
+	bucket := cluster.Bucket("travel-sample")
+
+	// We wait until the bucket is definitely connected and setup.
+	// For Server versions 6.5 or later if we hadn't opened a bucket then we could use cluster.WaitUntilReady here.
+	err = bucket.WaitUntilReady(5*time.Second, nil)
+	if err != nil {
+		panic(err)
+	}
+
 	viewMgr := bucket.ViewIndexes()
 
 	createView(viewMgr)
@@ -34,7 +44,7 @@ func createView(viewMgr *gocb.ViewIndexManager) {
 		Views: map[string]gocb.View{
 			"by_country": {
 				Map:    "function (doc, meta) { if (doc.type == 'landmark') { emit([doc.country, doc.city], null); } }",
-				Reduce: nil,
+				Reduce: "",
 			},
 			"by_activity": {
 				Map:    "function (doc, meta) { if (doc.type == 'landmark') { emit(doc.activity, null); } }",

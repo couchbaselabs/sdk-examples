@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"time"
 
 	"github.com/couchbase/gocb/v2"
@@ -14,19 +16,42 @@ func main() {
 			"password",
 		},
 	}
-	cluster, err := gocb.Connect("10.112.194.101", opts)
+	cluster, err := gocb.Connect("localhost", opts)
 	if err != nil {
 		panic(err)
 	}
 
-	collection := cluster.Bucket("travel-sample").DefaultCollection()
+	bucket := cluster.Bucket("default")
+	collection := bucket.DefaultCollection()
+
+	// We wait until the bucket is definitely connected and setup.
+	err = bucket.WaitUntilReady(5*time.Second, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	var customer123 interface{}
+	b, err := ioutil.ReadFile("customer123.json")
+	if err != nil {
+		panic(err)
+	}
+
+	err = json.Unmarshal(b, &customer123)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = collection.Upsert("customer123", customer123, nil)
+	if err != nil {
+		panic(err)
+	}
 
 	// Upsert
 	mops := []gocb.MutateInSpec{
 		gocb.UpsertSpec("fax", "311-555-0151", &gocb.UpsertSpecOptions{}),
 	}
 	upsertResult, err := collection.MutateIn("customer123", mops, &gocb.MutateInOptions{
-		Timeout: 50 * time.Millisecond,
+		Timeout: 10050 * time.Millisecond,
 	})
 	if err != nil {
 		panic(err)
@@ -35,7 +60,7 @@ func main() {
 
 	// Insert
 	mops = []gocb.MutateInSpec{
-		gocb.InsertSpec("purchases.complete", []interface{}{32, true, "None"}, &gocb.InsertSpecOptions{}),
+		gocb.InsertSpec("purchases.pending", []interface{}{32, true, "None"}, &gocb.InsertSpecOptions{}),
 	}
 	insertResult, err := collection.MutateIn("customer123", mops, &gocb.MutateInOptions{})
 	if err != nil {
@@ -45,7 +70,7 @@ func main() {
 
 	// Multiple specs
 	mops = []gocb.MutateInSpec{
-		gocb.RemoveSpec("addresses.billing[2]", nil),
+		gocb.RemoveSpec("addresses.billing", nil),
 		gocb.ReplaceSpec("email", "dougr96@hotmail.com", nil),
 	}
 	multiMutateResult, err := collection.MutateIn("customer123", mops, &gocb.MutateInOptions{})

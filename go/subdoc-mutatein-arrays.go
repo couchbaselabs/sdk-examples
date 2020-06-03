@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"time"
 
 	"github.com/couchbase/gocb/v2"
 )
@@ -14,12 +17,35 @@ func main() {
 			"password",
 		},
 	}
-	cluster, err := gocb.Connect("10.112.194.101", opts)
+	cluster, err := gocb.Connect("172.23.111.3", opts)
 	if err != nil {
 		panic(err)
 	}
 
-	collection := cluster.Bucket("travel-sample").DefaultCollection()
+	bucket := cluster.Bucket("default")
+	collection := bucket.DefaultCollection()
+
+	// We wait until the bucket is definitely connected and setup.
+	err = bucket.WaitUntilReady(5*time.Second, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	var customer123 interface{}
+	b, err := ioutil.ReadFile("customer123.json")
+	if err != nil {
+		panic(err)
+	}
+
+	err = json.Unmarshal(b, &customer123)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = collection.Upsert("customer123", customer123, nil)
+	if err != nil {
+		panic(err)
+	}
 
 	// Array Append
 	mops := []gocb.MutateInSpec{
@@ -59,7 +85,7 @@ func main() {
 		panic(err)
 	}
 	// the document my_array is now ["some element"]
-	fmt.Println(arrayAppendRootResult.Cas)
+	fmt.Println(arrayAppendRootResult.Cas())
 
 	// Array Multiples
 	mops = []gocb.MutateInSpec{
@@ -98,13 +124,19 @@ func main() {
 	fmt.Println(individualArrayAppendResult.Cas())
 
 	// Array Create document path
+	// Create an empty document so that MutateIn can create the path.
+	_, err = collection.Upsert("my_object", map[string]interface{}{}, nil)
+	if err != nil {
+		panic(err)
+	}
+
 	mops = []gocb.MutateInSpec{
 		gocb.ArrayAppendSpec("some.array", []string{"Hello", "World"}, &gocb.ArrayAppendSpecOptions{
 			HasMultiple: true,
 			CreatePath:  true,
 		}),
 	}
-	createPathResult, err := collection.MutateIn("my_array", mops, &gocb.MutateInOptions{})
+	createPathResult, err := collection.MutateIn("my_object", mops, &gocb.MutateInOptions{})
 	if err != nil {
 		panic(err)
 	}
@@ -122,16 +154,15 @@ func main() {
 	mops = []gocb.MutateInSpec{
 		gocb.ArrayAddUniqueSpec("purchases.complete", 95, &gocb.ArrayAddUniqueSpecOptions{}),
 	}
-	arrayAddUniqueSecondResult, err := collection.MutateIn("customer123", mops, &gocb.MutateInOptions{})
+	_, err = collection.MutateIn("customer123", mops, &gocb.MutateInOptions{})
 	fmt.Println(errors.Is(err, gocb.ErrPathExists)) // true
 	fmt.Println(arrayAddUniqueResult.Cas())
-	fmt.Println(arrayAddUniqueSecondResult.Cas())
 
 	// Array Add Insert
 	mops = []gocb.MutateInSpec{
 		gocb.ArrayInsertSpec("some.array[1]", "Cruel", &gocb.ArrayInsertSpecOptions{}),
 	}
-	arrayInsertResult, err := collection.MutateIn("my_array", mops, &gocb.MutateInOptions{})
+	arrayInsertResult, err := collection.MutateIn("my_object", mops, &gocb.MutateInOptions{})
 	if err != nil {
 		panic(err)
 	}
